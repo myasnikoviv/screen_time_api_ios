@@ -1,68 +1,156 @@
 import Flutter
+import _DeviceActivity_SwiftUI
 import UIKit
 import FamilyControls
 import SwiftUI
+import Foundation
 
-public class ScreenTimeApiIosPlugin: NSObject, FlutterPlugin {
+
+@objc public class ScreenTimeApiIosPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+    private var eventSink: FlutterEventSink?
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "screen_time_api_ios", binaryMessenger: registrar.messenger())
+        let eventChannel = FlutterEventChannel(name: "screen_time_api_ios/events", binaryMessenger: registrar.messenger())
         let instance = ScreenTimeApiIosPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
+        eventChannel.setStreamHandler(instance)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
-        case "selectAppsToDiscourage":
+        case "authorize":
             Task {
-                // スクリーンタイムAPIの認証
                 try await FamilyControlModel.shared.authorize()
                 showController()
+//                presentDeviceActivityReport()
             }
             result(nil)
-        case "encourageAll":
-            // 全部解放する
-            FamilyControlModel.shared.encourageAll();
-            FamilyControlModel.shared.saveSelection(selection: FamilyActivitySelection())
+        case "stopMonitoring":
+            Task {
+                try FamilyControlModel.shared.stopMonitoring()
+            }
+            result(nil)
+        case "startMonitoringForPackages":
+            Task {
+                try FamilyControlModel.shared.startMonitoring()
+            }
+            result(nil)
+        case "fetchActivityEvent":
+            checkForNewActivityEvent()
             result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }
     }
     
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        self.eventSink = events
+        return nil
+    }
+
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        self.eventSink = nil
+        return nil
+    }
+    
+    public func sendActivityMessage(message: String) {
+        eventSink?(message)
+    }
+    
+    func fetchLastActivityEvent() -> String? {
+        let sharedDefaults = UserDefaults(suiteName: "group.screenTime.com")
+        
+        if let data = sharedDefaults?.dictionary(forKey: "deviceActivityData") as? [String: String] {
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
+                let jsonString = String(data: jsonData, encoding: .utf8)
+                return jsonString
+            } catch {
+                print("Error serializing dictionary to JSON: \(error)")
+                return nil
+            }
+        }
+        
+        return nil
+    }
+    
+    public func checkForNewActivityEvent() {
+        if let lastEvent = fetchLastActivityEvent() {
+            sendActivityMessage(message: lastEvent)
+        }
+    }
+
+    @objc func handleNewActivityEvent() {
+        checkForNewActivityEvent()
+    }
+    
     @objc func onPressClose(){
-        dismiss()
-    }
+            dismiss()
+        }
+        
+        func showController() {
+            DispatchQueue.main.async {
+                let scenes = UIApplication.shared.connectedScenes
+                let windowScene = scenes.first as? UIWindowScene
+                let windows = windowScene?.windows
+                let controller = windows?.filter({ (w) -> Bool in
+                    return w.isHidden == false
+                }).first?.rootViewController as? FlutterViewController
+                
+                let selectAppVC: UIViewController = UIHostingController(rootView: ContentView())
+                selectAppVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+                    barButtonSystemItem: .close,
+                    target: self,
+                    action: #selector(self.onPressClose)
+                )
+                let naviVC = UINavigationController(rootViewController: selectAppVC)
+                controller?.present(naviVC, animated: true, completion: nil)
+            }
+        }
+        
+        func dismiss(){
+            DispatchQueue.main.async {
+                let scenes = UIApplication.shared.connectedScenes
+                let windowScene = scenes.first as? UIWindowScene
+                let windows = windowScene?.windows
+                let controller = windows?.filter({ (w) -> Bool in
+                    return w.isHidden == false
+                }).first?.rootViewController as? FlutterViewController
+                controller?.dismiss(animated: true, completion: nil)
+            }
+        }
     
-    func showController() {
-        DispatchQueue.main.async {
-            let scenes = UIApplication.shared.connectedScenes
-            let windowScene = scenes.first as? UIWindowScene
-            let windows = windowScene?.windows
-            let controller = windows?.filter({ (w) -> Bool in
-                return w.isHidden == false
-            }).first?.rootViewController as? FlutterViewController
+    func presentDeviceActivityReport() {
+        DispatchQueue.main.async { 
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootViewController = windowScene.windows.first?.rootViewController else {
+                print("Cannot find root view controller")
+                return
+            }
             
-            // アプリ選択のUIを出す
-            let selectAppVC: UIViewController = UIHostingController(rootView: ContentView())
-            selectAppVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
-                barButtonSystemItem: .close,
-                target: self,
-                action: #selector(self.onPressClose)
+            let reportView = DeviceActivityReport(
+                DeviceActivityReport.Context(rawValue: "Total Activity"),
+                filter: DeviceActivityFilter(
+                    segment: .hourly(during: DateInterval(start: Date().addingTimeInterval(-60 * 60 * 24), end: Date())),
+                    users: .all, // or .children
+                    devices: .init([.iPhone])
+                )
             )
-            let naviVC = UINavigationController(rootViewController: selectAppVC)
-            controller?.present(naviVC, animated: true, completion: nil)
+
+            let hostingController = UIHostingController(rootView: reportView)
+
+            rootViewController.present(hostingController, animated: true)
         }
     }
     
-    func dismiss(){
-        DispatchQueue.main.async {
-            let scenes = UIApplication.shared.connectedScenes
-            let windowScene = scenes.first as? UIWindowScene
-            let windows = windowScene?.windows
-            let controller = windows?.filter({ (w) -> Bool in
-                return w.isHidden == false
-            }).first?.rootViewController as? FlutterViewController
-            controller?.dismiss(animated: true, completion: nil)
-        }
-    }
+    
+    
+    
+    private let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
 }

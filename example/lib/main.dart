@@ -27,17 +27,39 @@ class _MyAppState extends State<MyApp> {
             children: [
               ElevatedButton(
                 onPressed: () {
-                  _screenTimeApiIosPlugin.selectAppsToDiscourage();
+                  _screenTimeApiIosPlugin.authorize();
                 },
-                child: const Text("selectAppsToDiscourage"),
+                child: const Text("authorize"),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  _screenTimeApiIosPlugin.encourageAll();
+                  _screenTimeApiIosPlugin.stopMonitoring();
                 },
-                child: const Text("encourageAll"),
+                child: const Text("stopMonitoring"),
               ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _screenTimeApiIosPlugin.startMonitoring();
+                },
+                child: const Text("startMonitoringForPackages: instagram, youtube"),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  _screenTimeApiIosPlugin.fetchActivityEvent();
+                },
+                child: const Text("fetchActivityEvent"),
+              ),
+              const SizedBox(height: 20),
+              const Text('Events:'),
+              const SizedBox(height: 10),
+              StreamBuilder(
+                  stream: _screenTimeApiIosPlugin.eventsStream,
+                  builder: (context, snapshot) {
+                    return Text(snapshot.hasData && snapshot.data != null ? snapshot.data!.toString() : '');
+                  }),
             ],
           ),
         ),
