@@ -23,7 +23,11 @@ import Foundation
             Task {
                 try await FamilyControlModel.shared.authorize()
                 showController()
-//                presentDeviceActivityReport()
+            }
+            result(nil)
+        case "openStatistics":
+            Task {
+                presentDeviceActivityReport()
             }
             result(nil)
         case "stopMonitoring":

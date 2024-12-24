@@ -16,6 +16,11 @@ class ScreenTimeApiIos {
     await instance.authorize();
   }
 
+  Future openStatistics() async {
+    final instance = ScreenTimeApiIosPlatform.instance as MethodChannelScreenTimeApiIos;
+    await instance.openStatistics();
+  }
+
   Future stopMonitoring() async {
     final instance = ScreenTimeApiIosPlatform.instance as MethodChannelScreenTimeApiIos;
     await instance.stopMonitoring();
