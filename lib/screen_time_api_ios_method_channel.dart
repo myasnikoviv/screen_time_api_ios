@@ -23,7 +23,7 @@ class MethodChannelScreenTimeApiIos extends ScreenTimeApiIosPlatform {
   }
 
   Future startMonitoring() async {
-    await methodChannel.invokeMethod('startMonitoringForPackages');
+    await methodChannel.invokeMethod('startMonitoring');
   }
 
   Future fetchActivityEvent() async {

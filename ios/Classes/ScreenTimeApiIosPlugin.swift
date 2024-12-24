@@ -35,7 +35,7 @@ import Foundation
                 try FamilyControlModel.shared.stopMonitoring()
             }
             result(nil)
-        case "startMonitoringForPackages":
+        case "startMonitoring":
             Task {
                 try FamilyControlModel.shared.startMonitoring()
             }
