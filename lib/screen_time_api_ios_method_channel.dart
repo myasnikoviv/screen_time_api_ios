@@ -8,18 +8,21 @@ class MethodChannelScreenTimeApiIos extends ScreenTimeApiIosPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('screen_time_api_ios');
+  final eventChannel = const EventChannel('screen_time_api_ios/events');
 
-  @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
+  Future authorize() async {
+    await methodChannel.invokeMethod('authorize');
   }
 
-  Future selectAppsToDiscourage() async {
-    await methodChannel.invokeMethod('selectAppsToDiscourage');
+  Future stopMonitoring() async {
+    await methodChannel.invokeMethod('stopMonitoring');
   }
 
-  Future encourageAll() async {
-    await methodChannel.invokeMethod('encourageAll');
+  Future startMonitoring() async {
+    await methodChannel.invokeMethod('startMonitoringForPackages');
+  }
+
+  Future fetchActivityEvent() async {
+    await methodChannel.invokeMethod('fetchActivityEvent');
   }
 }
