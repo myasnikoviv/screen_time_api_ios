@@ -14,6 +14,10 @@ class MethodChannelScreenTimeApiIos extends ScreenTimeApiIosPlatform {
     await methodChannel.invokeMethod('authorize');
   }
 
+  Future<bool> isAuthorized() async {
+    return await methodChannel.invokeMethod('isAuthorized');
+  }
+
   Future openStatistics() async {
     await methodChannel.invokeMethod('openStatistics');
   }

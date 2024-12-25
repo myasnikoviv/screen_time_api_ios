@@ -41,6 +41,10 @@ class FamilyControlModel: ObservableObject {
     func authorize() async throws {
         try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
     }
+    
+    func requestAuthorizationStatus() -> AuthorizationStatus {
+        return AuthorizationCenter.shared.authorizationStatus
+    }
 
 
     func startMonitoring()  throws{

@@ -16,6 +16,12 @@ class ScreenTimeApiIos {
     await instance.authorize();
   }
 
+  Future<bool> isAuthorized() async {
+    final instance = ScreenTimeApiIosPlatform.instance as MethodChannelScreenTimeApiIos;
+    return await instance.isAuthorized();
+  }
+
+
   Future openStatistics() async {
     final instance = ScreenTimeApiIosPlatform.instance as MethodChannelScreenTimeApiIos;
     await instance.openStatistics();

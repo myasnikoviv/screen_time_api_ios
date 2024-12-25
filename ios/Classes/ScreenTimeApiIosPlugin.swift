@@ -22,9 +22,10 @@ import Foundation
         case "authorize":
             Task {
                 try await FamilyControlModel.shared.authorize()
-                showController()
             }
             result(nil)
+        case "isAuthorized":
+            handleIsAuthorized(result: result)
         case "openStatistics":
             Task {
                 presentDeviceActivityReport()
@@ -46,6 +47,11 @@ import Foundation
         default:
             result(FlutterMethodNotImplemented)
         }
+    }
+    
+    private func handleIsAuthorized(result: @escaping FlutterResult) {
+        let isAuthorized = FamilyControlModel.shared.requestAuthorizationStatus() == .approved
+        result(isAuthorized)
     }
     
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
