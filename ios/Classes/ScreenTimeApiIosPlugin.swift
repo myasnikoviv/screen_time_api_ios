@@ -6,15 +6,13 @@ import SwiftUI
 import Foundation
 
 
-@objc public class ScreenTimeApiIosPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
-    private var eventSink: FlutterEventSink?
+@objc public class ScreenTimeApiIosPlugin: NSObject, FlutterPlugin {
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "screen_time_api_ios", binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "screen_time_api_ios/events", binaryMessenger: registrar.messenger())
         let instance = ScreenTimeApiIosPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
-        eventChannel.setStreamHandler(instance)
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -42,7 +40,7 @@ import Foundation
             }
             result(nil)
         case "fetchActivityEvent":
-            checkForNewActivityEvent()
+            checkForNewActivityEvent(result: result)
             result(nil)
         default:
             result(FlutterMethodNotImplemented)
@@ -52,20 +50,6 @@ import Foundation
     private func handleIsAuthorized(result: @escaping FlutterResult) {
         let isAuthorized = FamilyControlModel.shared.requestAuthorizationStatus() == .approved
         result(isAuthorized)
-    }
-    
-    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        self.eventSink = events
-        return nil
-    }
-
-    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        self.eventSink = nil
-        return nil
-    }
-    
-    public func sendActivityMessage(message: String) {
-        eventSink?(message)
     }
     
     func fetchLastActivityEvent() -> String? {
@@ -85,14 +69,10 @@ import Foundation
         return nil
     }
     
-    public func checkForNewActivityEvent() {
+    public func checkForNewActivityEvent(result: @escaping FlutterResult) {
         if let lastEvent = fetchLastActivityEvent() {
-            sendActivityMessage(message: lastEvent)
+            result(lastEvent)
         }
-    }
-
-    @objc func handleNewActivityEvent() {
-        checkForNewActivityEvent()
     }
     
     @objc func onPressClose(){
